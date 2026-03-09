@@ -1,0 +1,11 @@
+# Dataset too large for GitHub (169MB)
+Retail_Transactions_Dataset.csv
+
+# Local output files
+output.txt
+mapreduce_errors.log
+
+# Python cache
+__pycache__/
+*.pyc
+report.html

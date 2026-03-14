@@ -4,15 +4,7 @@ Hadoop 3.3.6 Streaming job that computes total sales revenue and transaction cou
 
 ---
 
-## Team Members
 
-| Name | Registration Number |
-|------|---------------------|
-|      |                     |
-|      |                     |
-|      |                     |
-
----
 
 ## Dataset
 

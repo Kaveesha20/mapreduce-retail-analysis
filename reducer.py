@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
-"""
-Hadoop Streaming Reducer — Retail Transactions Dataset
-Task: Total revenue and transaction count per city.
-
-Input  (stdin):  sorted mapper output — city TAB total_cost
-Output (stdout): city TAB total_revenue TAB transaction_count
-"""
 
 import sys
 import io
+import math
 
 sys.stdin  = io.TextIOWrapper(sys.stdin.buffer,  encoding="utf-8")
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", line_buffering=True)
@@ -24,12 +18,26 @@ def parse_line(line):
     if len(parts) != 2:
         sys.stderr.write(f"SKIPPED malformed input: {line!r}\n")
         return None
+
     city, raw_cost = parts
+    city = city.strip()
+    raw_cost = raw_cost.strip()
+
+    if not city:
+        sys.stderr.write(f"SKIPPED missing city in input: {line!r}\n")
+        return None
+
     try:
-        return city, float(raw_cost)
+        cost = float(raw_cost)
     except ValueError:
         sys.stderr.write(f"SKIPPED non-numeric cost: {line!r}\n")
         return None
+
+    if not math.isfinite(cost) or cost < 0:
+        sys.stderr.write(f"SKIPPED invalid cost value: {line!r}\n")
+        return None
+
+    return city, cost
 
 
 def main():

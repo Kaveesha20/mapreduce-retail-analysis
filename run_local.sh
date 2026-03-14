@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# run_local.sh — Local MapReduce test using Unix pipes
-# Usage: bash run_local.sh
 
 set -euo pipefail
 
@@ -13,6 +11,41 @@ cd "$SCRIPT_DIR"
 INPUT="Retail_Transactions_Dataset.csv"
 OUTPUT="output.txt"
 ERROR_LOG="mapreduce_errors.log"
+
+usage() {
+  cat <<'EOF'
+Usage: bash run_local.sh [options]
+
+Runs a local MapReduce simulation:
+  mapper.py | sort | reducer.py
+
+Options:
+  -i, --input FILE       Input CSV file (default: Retail_Transactions_Dataset.csv)
+  -o, --output FILE      Output TSV file (default: output.txt)
+  -e, --error-log FILE   Mapper/reducer stderr log (default: mapreduce_errors.log)
+  -h, --help             Show this help
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -i|--input)
+      [[ $# -lt 2 ]] && { echo "Missing value for $1" >&2; usage; exit 1; }
+      INPUT="$2"; shift 2 ;;
+    -o|--output)
+      [[ $# -lt 2 ]] && { echo "Missing value for $1" >&2; usage; exit 1; }
+      OUTPUT="$2"; shift 2 ;;
+    -e|--error-log)
+      [[ $# -lt 2 ]] && { echo "Missing value for $1" >&2; usage; exit 1; }
+      ERROR_LOG="$2"; shift 2 ;;
+    -h|--help)
+      usage; exit 0 ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage
+      exit 1 ;;
+  esac
+done
 
 PY=""
 for cmd in python3 python; do
@@ -42,11 +75,11 @@ echo -e "  ${DIM}[3/3]${RESET} Reducer  — sum revenue, count transactions per 
 echo ""
 
 T0=$(date +%s%3N)
-cat "$INPUT" | $PY mapper.py 2>"$ERROR_LOG" | sort | $PY reducer.py 2>>"$ERROR_LOG" > "$OUTPUT"
+$PY mapper.py < "$INPUT" 2>"$ERROR_LOG" | sort | $PY reducer.py 2>>"$ERROR_LOG" > "$OUTPUT"
 T1=$(date +%s%3N)
 ELAPSED=$(( T1 - T0 ))
 
-CITY_COUNT=$(awk 'END{print NR-1}' "$OUTPUT")
+CITY_COUNT=$(awk 'NR>1{count++} END{print count+0}' "$OUTPUT")
 TOTAL_TXN=$(awk -F'\t' 'NR>1{sum+=$3} END{print sum+0}' "$OUTPUT")
 SKIPPED=$(wc -l < "$ERROR_LOG" | tr -d ' ')
 TOTAL_REV=$(awk -F'\t' 'NR>1{sum+=$2} END{printf "%.2f", sum}' "$OUTPUT")

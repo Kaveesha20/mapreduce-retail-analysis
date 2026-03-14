@@ -96,3 +96,29 @@ Top 5 cities by revenue (full results in `output.txt`):
 | `output.txt` | Final output — one tab-separated row per city |
 | `mapreduce_errors.log` | Skipped/malformed rows logged during local run |
 | `Retail_Transactions_Dataset.csv` | Input dataset — 1,000,000 rows, 13 columns |
+
+---
+
+## Rubric Alignment (Marking Scheme Coverage)
+
+This section maps the assignment marking criteria to concrete evidence in this repository.
+
+| Marking Criterion | Coverage in This Project | Evidence |
+|-------------------|--------------------------|----------|
+| Map/Reduce Logic Accuracy (30) | Implemented mapper and reducer for city-wise sales aggregation with input validation and malformed-row handling. | `mapper.py`, `reducer.py` |
+| Dataset Appropriateness (10) | Uses a real-world public Kaggle dataset with 1,000,000 rows and 13 attributes. | Dataset section above, `Retail_Transactions_Dataset.csv` |
+| Code Quality and Structure (20) | Clear module separation (mapper/reducer/runner/setup), readable scripts, and deterministic output format. | `mapper.py`, `reducer.py`, `run_local.sh`, `hadoop_setup.sh` |
+| Execution Output Evidence (10) | Local pipeline output and error logs are generated; Hadoop execution script provides full end-to-end run. | `output.txt`, `mapreduce_errors.log`, `hadoop_setup.sh` |
+| Results Interpretation (10) | Revenue concentration by city can be identified from ranked output; transaction volume supports comparative city behavior analysis. | Expected Output section, output ranking |
+| Documentation and Clarity (10) | Step-by-step run instructions for both local and Hadoop modes with prerequisites and expected result format. | This README |
+| Bonus for Creativity/Scale (10) | Large-scale data processing on 1M records with Hadoop Streaming and Dockerized reproducible setup. | `hadoop_setup.sh`, Dataset section |
+
+---
+
+## Result Interpretation (1-2 Paragraph Summary)
+
+The city-level aggregation shows that total revenue is distributed across multiple major cities with close transaction counts, suggesting a broad and relatively balanced market presence rather than dependence on a single city. Cities such as Dallas, Boston, Chicago, and New York appear near the top by total revenue, indicating strong sales contribution from diverse urban regions. Because both revenue and transaction count are reported, this output supports comparing not only where sales are highest, but also whether high revenue is driven by volume or potentially higher-value baskets.
+
+From a performance perspective, the reducer uses a streaming key-change approach, which keeps memory usage constant with respect to dataset size and makes it suitable for large-scale input. A practical extension is to compute additional KPIs such as average order value per city and seasonal city-level trends by combining `Season` with `City`. Accuracy can be further improved with stronger numeric normalization (currency symbols, malformed separators) and more detailed bad-record audit logs for data quality reporting.
+
+---

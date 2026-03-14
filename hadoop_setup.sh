@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# hadoop_setup.sh — Full Hadoop Streaming setup via Docker
-# Dataset: Retail Transactions Dataset (1,000,000 rows)
-# Task:    Total Revenue and Transaction Count per City
-# Usage:   bash hadoop_setup.sh
 
 set -euo pipefail
 
@@ -25,6 +21,44 @@ hxr() { docker exec -u root   "$CONTAINER" bash -c "$*"; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+
+usage() {
+  cat <<EOF
+Usage: bash hadoop_setup.sh [options]
+
+Starts a single-node Hadoop cluster in Docker and runs a streaming MapReduce job.
+
+Options:
+  --image NAME        Docker image to use (default: $IMAGE)
+  --container NAME    Docker container name (default: $CONTAINER)
+  --hdfs-input PATH   HDFS input directory (default: $HDFS_INPUT)
+  --hdfs-output PATH  HDFS output directory (default: $HDFS_OUTPUT)
+  -h, --help          Show this help
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --image)
+      [[ $# -lt 2 ]] && { echo "Missing value for $1" >&2; usage; exit 1; }
+      IMAGE="$2"; shift 2 ;;
+    --container)
+      [[ $# -lt 2 ]] && { echo "Missing value for $1" >&2; usage; exit 1; }
+      CONTAINER="$2"; shift 2 ;;
+    --hdfs-input)
+      [[ $# -lt 2 ]] && { echo "Missing value for $1" >&2; usage; exit 1; }
+      HDFS_INPUT="$2"; shift 2 ;;
+    --hdfs-output)
+      [[ $# -lt 2 ]] && { echo "Missing value for $1" >&2; usage; exit 1; }
+      HDFS_OUTPUT="$2"; shift 2 ;;
+    -h|--help)
+      usage; exit 0 ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage
+      exit 1 ;;
+  esac
+done
 
 command -v docker &>/dev/null || fail "Docker not found."
 for f in Retail_Transactions_Dataset.csv mapper.py reducer.py; do
@@ -122,10 +156,16 @@ step 5 "Start YARN"
 hx "yarn --daemon start resourcemanager"
 hx "yarn --daemon start nodemanager"
 info "Waiting for NodeManager (up to 60s)..."
+yarn_ready=0
 for i in $(seq 1 30); do
-  hx "yarn node -list 2>/dev/null" | grep -q "RUNNING" && { ok "YARN ready"; break; }
+  if hx "yarn node -list 2>/dev/null" | grep -q "RUNNING"; then
+    yarn_ready=1
+    ok "YARN ready"
+    break
+  fi
   sleep 2
 done
+[[ "$yarn_ready" -eq 1 ]] || fail "YARN NodeManager did not become RUNNING in time."
 
 step 6 "Upload dataset to HDFS"
 hx "hdfs dfs -mkdir -p $HDFS_INPUT"

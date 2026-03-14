@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
-"""
-Hadoop Streaming Mapper — Retail Transactions Dataset
-Task: Total revenue and transaction count per city.
-Dataset: Retail Transactions Dataset (1,000,000 rows)
-Source: kaggle.com/datasets/prasad22/retail-transactions-dataset
-
-Column indices:
-  5 → Total_Cost  (float, USD)
-  7 → City        (string)
-"""
 
 import sys
 import csv
 import io
+
+TOTAL_COST_IDX = 5
+CITY_IDX = 7
+MIN_COLUMNS = 8
 
 sys.stdin  = io.TextIOWrapper(sys.stdin.buffer,  encoding="utf-8")
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", line_buffering=True)
@@ -37,15 +31,17 @@ def main():
     for line_num, row in enumerate(reader):
         if line_num == 0:
             continue
-        if len(row) < 8:
+        if len(row) < MIN_COLUMNS:
             sys.stderr.write(f"SKIPPED short row at line {line_num + 1}\n")
             continue
 
-        cost = parse_cost(row[5])
-        city = extract_city(row[7])
+        cost = parse_cost(row[TOTAL_COST_IDX])
+        city = extract_city(row[CITY_IDX])
 
         if cost is None:
-            sys.stderr.write(f"SKIPPED invalid cost at line {line_num + 1}: '{row[5]}'\n")
+            sys.stderr.write(
+                f"SKIPPED invalid cost at line {line_num + 1}: '{row[TOTAL_COST_IDX]}'\n"
+            )
             continue
         if city is None:
             sys.stderr.write(f"SKIPPED missing city at line {line_num + 1}\n")
